@@ -37,6 +37,10 @@ class CoffeeShopApp:
         # Configure the table appearance
         self.configure_styles()
 
+        # Store all coffee shops retrieved from Flask
+        # Filtering will use this list without repeatedly contacting Flask
+        self.all_shops = []
+
         # Build the interface
         self.create_widgets()
 
@@ -485,6 +489,103 @@ class CoffeeShopApp:
         delete_button.pack(side="left")
 
 
+        # --------------------------------
+        # SEARCH AND FILTER SECTION
+        # --------------------------------
+
+        # Container for search and filter controls
+        filter_frame = tk.Frame(
+            main_frame,
+            bg="#F5F3EE"
+        )
+        filter_frame.pack(fill="x", pady=(0, 12))
+
+        # Search input
+        self.search_entry = tk.Entry(
+            filter_frame,
+            font=("Arial", 10),
+            width=30
+        )
+        self.search_entry.pack(
+            side="left",
+            padx=(0, 10),
+            ipady=6
+        )
+
+        # Search when the user types
+        self.search_entry.bind(
+            "<KeyRelease>",
+            lambda event: self.apply_filters()
+        )
+
+        # City filter
+        self.city_filter = ttk.Combobox(
+            filter_frame,
+            values=[
+                "All Cities",
+                "Madinah",
+                "Riyadh",
+                "Jeddah",
+                "Makkah",
+                "Dammam",
+                "Khobar",
+                "Taif",
+                "Abha"
+            ],
+            state="readonly",
+            width=15
+        )
+        self.city_filter.pack(side="left", padx=5)
+
+        # Set the default city filter
+        self.city_filter.set("All Cities")
+
+        # Apply filters whenever the city changes
+        self.city_filter.bind(
+            "<<ComboboxSelected>>",
+            lambda event: self.apply_filters()
+        )
+
+        # Category filter
+        self.category_filter = ttk.Combobox(
+            filter_frame,
+            values=[
+                "All Categories",
+                "Specialty",
+                "Traditional",
+                "International",
+                "Other"
+            ],
+            state="readonly",
+            width=17
+        )
+        self.category_filter.pack(side="left", padx=5)
+
+        # Set the default category filter
+        self.category_filter.set("All Categories")
+
+        # Apply filters whenever the category changes
+        self.category_filter.bind(
+            "<<ComboboxSelected>>",
+            lambda event: self.apply_filters()
+        )
+
+        # Clear all filters button
+        clear_button = tk.Button(
+            filter_frame,
+            text="Clear Filters",
+            font=("Arial", 9, "bold"),
+            bg="#D69E36",
+            fg="white",
+            relief="flat",
+            padx=12,
+            pady=6,
+            command=self.clear_filters
+        )
+        clear_button.pack(side="right")
+
+
+
 
         # --------------------------------
         # COFFEE SHOP TABLE
@@ -585,32 +686,20 @@ class CoffeeShopApp:
             for item in self.shop_table.get_children():
                 self.shop_table.delete(item)
 
-            # Get the list of coffee shops
-            shops = result["data"]
+            # Store all coffee shops retrieved from Flask
+            self.all_shops = result["data"]
 
-            # Insert each coffee shop into the table
-            for shop in shops:
-                self.shop_table.insert(
-                    "",
-                    "end",
-                    values=(
-                        shop["id"],
-                        shop["name"],
-                        shop["city"],
-                        shop["rating"],
-                        shop["category"],
-                        shop["notes"] or ""
-                    )
-                )
+            # Apply current search and filter settings
+            self.apply_filters()
 
             # Update the total number of coffee shops
-            self.total_label.config(text=str(len(shops)))
+            #self.total_label.config(text=str(len(shops)))
 
             # Update the status message
-            self.status_label.config(
-                text=f"Connected successfully | {len(shops)} shops loaded",
-                fg="#244A3B"
-            )
+            # self.status_label.config(
+            #     text=f"Connected successfully | {len(shops)} shops loaded",
+            #     fg="#244A3B"
+            # )
 
         except HTTPError as error:
             # Handle HTTP errors returned by Flask
@@ -909,6 +998,82 @@ class CoffeeShopApp:
                 "Connection Error",
                 "Cannot connect to Flask."
             )
+
+    
+    def apply_filters(self):
+        """Filter coffee shops using name, city and category."""
+
+        # Get the user's search text
+        search_text = self.search_entry.get().strip().lower()
+
+        # Get selected city and category
+        selected_city = self.city_filter.get()
+        selected_category = self.category_filter.get()
+
+        # Clear the current table
+        for item in self.shop_table.get_children():
+            self.shop_table.delete(item)
+
+        # Loop through all stored coffee shops
+        for shop in self.all_shops:
+
+            # Check whether the name matches the search
+            name_matches = (
+                search_text in shop["name"].lower()
+            )
+
+            # Check whether the selected city matches
+            city_matches = (
+                selected_city == "All Cities"
+                or shop["city"] == selected_city
+            )
+
+            # Check whether the selected category matches
+            category_matches = (
+                selected_category == "All Categories"
+                or shop["category"] == selected_category
+            )
+
+            # Display only records matching all conditions
+            if name_matches and city_matches and category_matches:
+
+                self.shop_table.insert(
+                    "",
+                    "end",
+                    values=(
+                        shop["id"],
+                        shop["name"],
+                        shop["city"],
+                        shop["rating"],
+                        shop["category"],
+                        shop["notes"] or ""
+                    )
+                )
+
+        # Update the total to show the number of visible records
+        visible_count = len(self.shop_table.get_children())
+
+        self.total_label.config(text=str(visible_count))
+
+        # Update the status message
+        self.status_label.config(
+            text=f"Showing {visible_count} matching coffee shops",
+            fg="#244A3B"
+        )
+
+    def clear_filters(self):
+        """Reset all search and filter controls."""
+
+        # Clear the search input
+        self.search_entry.delete(0, "end")
+
+        # Reset city and category filters
+        self.city_filter.set("All Cities")
+        self.category_filter.set("All Categories")
+
+        # Display all coffee shops again
+        self.apply_filters()
+
 
 
 
