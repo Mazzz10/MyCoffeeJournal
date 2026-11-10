@@ -459,6 +459,19 @@ class CoffeeShopApp:
         )
         refresh_button.pack(side="left")
 
+        # Statistics dashboard button
+        statistics_button = tk.Button(
+            button_frame,
+            text="Statistics",
+            font=("Arial", 10, "bold"),
+            bg="#527A68",
+            fg="white",
+            relief="flat",
+            padx=15,
+            pady=7,
+            command=self.show_statistics
+        )
+        statistics_button.pack(side="left", padx=(8, 0))
 
         # Edit selected coffee shop button
         edit_button = tk.Button(
@@ -1073,6 +1086,213 @@ class CoffeeShopApp:
 
         # Display all coffee shops again
         self.apply_filters()
+
+    
+    def show_statistics(self):
+        """Display statistics about all saved coffee shops."""
+
+        # Get all coffee shops stored in the application
+        shops = self.all_shops
+
+        # Check whether the database contains any records
+        if not shops:
+            messagebox.showinfo(
+                "Statistics",
+                "There are no coffee shops to analyze yet."
+            )
+            return
+
+        # --------------------------------
+        # CALCULATE TOTAL SHOPS
+        # --------------------------------
+
+        # Count the number of saved coffee shops
+        total_shops = len(shops)
+
+        # --------------------------------
+        # CALCULATE AVERAGE RATING
+        # --------------------------------
+
+        # Extract all ratings and calculate their average
+        total_rating = sum(float(shop["rating"]) for shop in shops)
+
+        average_rating = total_rating / total_shops
+
+        # --------------------------------
+        # FIND HIGHEST-RATED SHOP
+        # --------------------------------
+
+        # Find the coffee shop with the highest rating
+        highest_shop = max(
+            shops,
+            key=lambda shop: float(shop["rating"])
+        )
+
+        # --------------------------------
+        # COUNT SHOPS BY CITY
+        # --------------------------------
+
+        # Dictionary to store city names and their counts
+        city_counts = {}
+
+        for shop in shops:
+
+            city = shop["city"]
+
+            # Increase the count for the current city
+            city_counts[city] = city_counts.get(city, 0) + 1
+
+        # --------------------------------
+        # CREATE STATISTICS WINDOW
+        # --------------------------------
+
+        stats_window = tk.Toplevel(self.root)
+        stats_window.title("Coffee Shop Statistics")
+        stats_window.geometry("550x600")
+        stats_window.configure(bg="#F5F3EE")
+        stats_window.resizable(False, False)
+
+        # Main container
+        stats_frame = tk.Frame(
+            stats_window,
+            bg="#F5F3EE",
+            padx=25,
+            pady=25
+        )
+        stats_frame.pack(fill="both", expand=True)
+
+        # Window title
+        tk.Label(
+            stats_frame,
+            text="Statistics Dashboard",
+            font=("Arial", 21, "bold"),
+            bg="#F5F3EE",
+            fg="#244A3B"
+        ).pack(anchor="w", pady=(0, 20))
+
+        # --------------------------------
+        # TOTAL SHOPS
+        # --------------------------------
+
+        total_frame = tk.Frame(
+            stats_frame,
+            bg="white",
+            padx=15,
+            pady=12
+        )
+        total_frame.pack(fill="x", pady=6)
+
+        tk.Label(
+            total_frame,
+            text="TOTAL COFFEE SHOPS",
+            font=("Arial", 10, "bold"),
+            bg="white",
+            fg="#666666"
+        ).pack(anchor="w")
+
+        tk.Label(
+            total_frame,
+            text=str(total_shops),
+            font=("Arial", 23, "bold"),
+            bg="white",
+            fg="#244A3B"
+        ).pack(anchor="w")
+
+        # --------------------------------
+        # AVERAGE RATING
+        # --------------------------------
+
+        average_frame = tk.Frame(
+            stats_frame,
+            bg="white",
+            padx=15,
+            pady=12
+        )
+        average_frame.pack(fill="x", pady=6)
+
+        tk.Label(
+            average_frame,
+            text="AVERAGE RATING",
+            font=("Arial", 10, "bold"),
+            bg="white",
+            fg="#666666"
+        ).pack(anchor="w")
+
+        tk.Label(
+            average_frame,
+            text=f"{average_rating:.2f} / 5",
+            font=("Arial", 23, "bold"),
+            bg="white",
+            fg="#244A3B"
+        ).pack(anchor="w")
+
+        # --------------------------------
+        # HIGHEST-RATED SHOP
+        # --------------------------------
+
+        highest_frame = tk.Frame(
+            stats_frame,
+            bg="white",
+            padx=15,
+            pady=12
+        )
+        highest_frame.pack(fill="x", pady=6)
+
+        tk.Label(
+            highest_frame,
+            text="HIGHEST-RATED COFFEE SHOP",
+            font=("Arial", 10, "bold"),
+            bg="white",
+            fg="#666666"
+        ).pack(anchor="w")
+
+        tk.Label(
+            highest_frame,
+            text=highest_shop["name"],
+            font=("Arial", 15, "bold"),
+            bg="white",
+            fg="#244A3B"
+        ).pack(anchor="w")
+
+        tk.Label(
+            highest_frame,
+            text=f"Rating: {float(highest_shop['rating']):.1f} / 5",
+            font=("Arial", 10),
+            bg="white",
+            fg="#666666"
+        ).pack(anchor="w")
+
+        # --------------------------------
+        # SHOPS BY CITY
+        # --------------------------------
+
+        city_frame = tk.Frame(
+            stats_frame,
+            bg="white",
+            padx=15,
+            pady=12
+        )
+        city_frame.pack(fill="both", expand=True, pady=6)
+
+        tk.Label(
+            city_frame,
+            text="COFFEE SHOPS BY CITY",
+            font=("Arial", 10, "bold"),
+            bg="white",
+            fg="#666666"
+        ).pack(anchor="w", pady=(0, 10))
+
+        # Display the number of shops in each city
+        for city, count in sorted(city_counts.items()):
+
+            tk.Label(
+                city_frame,
+                text=f"{city}: {count} shop(s)",
+                font=("Arial", 11),
+                bg="white",
+                fg="#244A3B"
+            ).pack(anchor="w", pady=3)
+
 
 
 
