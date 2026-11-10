@@ -79,3 +79,81 @@ class DatabaseManager:
 
         finally:
             connection.close()
+
+    
+    def get_shop(self, shop_id):
+        """Retrieve one coffee shop using its ID."""
+
+        # Open a new database connection
+        connection = self.get_connection()
+
+        try:
+            cursor = connection.cursor()
+
+            # Use a placeholder to safely pass the shop ID
+            cursor.execute(
+                "SELECT * FROM coffee_shops WHERE id = ?",
+                (shop_id,)
+            )
+
+            # Fetch the matching record
+            row = cursor.fetchone()
+
+            # Return a dictionary if found, otherwise None
+            return dict(row) if row else None
+
+        finally:
+            # Always close the database connection
+            connection.close()
+
+    def update_shop(self, shop_id, name, city, rating, category, notes):
+        """Update an existing coffee shop."""
+
+        connection = self.get_connection()
+
+        try:
+            cursor = connection.cursor()
+
+            # Update the record matching the given ID
+            cursor.execute("""
+                UPDATE coffee_shops
+                SET name = ?,
+                    city = ?,
+                    rating = ?,
+                    category = ?,
+                    notes = ?
+                WHERE id = ?
+            """, (name, city, rating, category, notes, shop_id))
+
+            # Save the changes
+            connection.commit()
+
+            # Return True if a record was updated
+            return cursor.rowcount > 0
+
+        finally:
+            connection.close()
+
+    def delete_shop(self, shop_id):
+        """Delete a coffee shop using its ID."""
+
+        connection = self.get_connection()
+
+        try:
+            cursor = connection.cursor()
+
+            # Delete only the record with the specified ID
+            cursor.execute(
+                "DELETE FROM coffee_shops WHERE id = ?",
+                (shop_id,)
+            )
+
+            # Save the deletion
+            connection.commit()
+
+            # Return True if a record was deleted
+            return cursor.rowcount > 0
+
+        finally:
+            connection.close()
+
