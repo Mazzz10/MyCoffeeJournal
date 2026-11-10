@@ -456,6 +456,36 @@ class CoffeeShopApp:
         refresh_button.pack(side="left")
 
 
+        # Edit selected coffee shop button
+        edit_button = tk.Button(
+            button_frame,
+            text="Edit",
+            font=("Arial", 10, "bold"),
+            bg="#D69E36",
+            fg="white",
+            relief="flat",
+            padx=15,
+            pady=7,
+            command=self.edit_shop
+        )
+        edit_button.pack(side="left", padx=(0, 8))
+
+        # Delete selected coffee shop button
+        delete_button = tk.Button(
+            button_frame,
+            text="Delete",
+            font=("Arial", 10, "bold"),
+            bg="#B84040",
+            fg="white",
+            relief="flat",
+            padx=15,
+            pady=7,
+            command=self.delete_shop
+        )
+        delete_button.pack(side="left")
+
+
+
         # --------------------------------
         # COFFEE SHOP TABLE
         # --------------------------------
@@ -609,6 +639,278 @@ class CoffeeShopApp:
                 text="Invalid response received from server.",
                 fg="red"
             )
+
+    def edit_shop(self):
+        """Open the selected coffee shop for editing."""
+
+        # Get the selected row from the table
+        selected = self.shop_table.selection()
+
+        # Make sure a record is selected
+        if not selected:
+            messagebox.showwarning(
+                "No Selection",
+                "Please select a coffee shop to edit."
+            )
+            return
+
+        # Retrieve the selected row values
+        values = self.shop_table.item(selected[0], "values")
+
+        # Extract the coffee shop ID
+        shop_id = int(values[0])
+
+        # Create the edit window
+        edit_window = tk.Toplevel(self.root)
+        edit_window.title("Edit Coffee Shop")
+        edit_window.geometry("450x550")
+        edit_window.configure(bg="#F5F3EE")
+        edit_window.resizable(False, False)
+
+        # Main form container
+        form_frame = tk.Frame(
+            edit_window,
+            bg="#F5F3EE",
+            padx=25,
+            pady=20
+        )
+        form_frame.pack(fill="both", expand=True)
+
+        # Form title
+        tk.Label(
+            form_frame,
+            text="Edit Coffee Shop",
+            font=("Arial", 18, "bold"),
+            bg="#F5F3EE",
+            fg="#244A3B"
+        ).pack(anchor="w", pady=(0, 20))
+
+        # Shop name
+        tk.Label(
+            form_frame,
+            text="Shop Name *",
+            bg="#F5F3EE"
+        ).pack(anchor="w")
+
+        name_entry = tk.Entry(form_frame, font=("Arial", 11))
+        name_entry.pack(fill="x", pady=(5, 15))
+        name_entry.insert(0, values[1])
+
+        # City
+        tk.Label(
+            form_frame,
+            text="City *",
+            bg="#F5F3EE"
+        ).pack(anchor="w")
+
+        city_entry = ttk.Combobox(
+            form_frame,
+            values=[
+                "Madinah", "Riyadh", "Jeddah", "Makkah",
+                "Dammam", "Khobar", "Taif", "Abha"
+            ],
+            state="readonly"
+        )
+        city_entry.pack(fill="x", pady=(5, 15))
+        city_entry.set(values[2])
+
+        # Rating
+        tk.Label(
+            form_frame,
+            text="Rating (0 - 5) *",
+            bg="#F5F3EE"
+        ).pack(anchor="w")
+
+        rating_entry = tk.Entry(form_frame, font=("Arial", 11))
+        rating_entry.pack(fill="x", pady=(5, 15))
+        rating_entry.insert(0, values[3])
+
+        # Category
+        tk.Label(
+            form_frame,
+            text="Category *",
+            bg="#F5F3EE"
+        ).pack(anchor="w")
+
+        category_entry = ttk.Combobox(
+            form_frame,
+            values=[
+                "Specialty",
+                "Traditional",
+                "International",
+                "Other"
+            ],
+            state="readonly"
+        )
+        category_entry.pack(fill="x", pady=(5, 15))
+        category_entry.set(values[4])
+
+        # Notes
+        tk.Label(
+            form_frame,
+            text="Notes",
+            bg="#F5F3EE"
+        ).pack(anchor="w")
+
+        notes_entry = tk.Text(form_frame, height=4)
+        notes_entry.pack(fill="x", pady=(5, 15))
+        notes_entry.insert("1.0", values[5])
+
+        def save_changes():
+            """Validate and submit the edited coffee shop."""
+
+            # Collect updated values
+            name = name_entry.get().strip()
+            city = city_entry.get().strip()
+            rating = rating_entry.get().strip()
+            category = category_entry.get().strip()
+            notes = notes_entry.get("1.0", "end-1c").strip()
+
+            # Validate required fields
+            if not name or not city or not rating or not category:
+                messagebox.showwarning(
+                    "Missing Information",
+                    "Please fill in all required fields."
+                )
+                return
+
+            # Validate rating
+            try:
+                rating_value = float(rating)
+
+                if not 0 <= rating_value <= 5:
+                    raise ValueError
+
+            except ValueError:
+                messagebox.showerror(
+                    "Invalid Rating",
+                    "Rating must be between 0 and 5."
+                )
+                return
+
+            # Prepare the updated data
+            updated_values = {
+                "name": name,
+                "city": city,
+                "rating": rating,
+                "category": category,
+                "notes": notes
+            }
+
+            try:
+                # Send POST request to Flask
+                result = self.send_post_request(
+                    f"/shops/update/{shop_id}",
+                    updated_values
+                )
+
+                if result.get("success"):
+                    messagebox.showinfo(
+                        "Success",
+                        "Coffee shop updated successfully!"
+                    )
+
+                    # Close edit window and refresh table
+                    edit_window.destroy()
+                    self.load_shops()
+
+            except HTTPError as error:
+                # Display error returned by Flask
+                error_data = json.loads(
+                    error.read().decode("utf-8")
+                )
+
+                messagebox.showerror(
+                    "Server Error",
+                    error_data.get("message", "Update failed")
+                )
+
+            except (URLError, socket.timeout):
+                # Handle connection problems
+                messagebox.showerror(
+                    "Connection Error",
+                    "Cannot connect to Flask."
+                )
+
+        # Save changes button
+        tk.Button(
+            form_frame,
+            text="Save Changes",
+            bg="#244A3B",
+            fg="white",
+            font=("Arial", 11, "bold"),
+            relief="flat",
+            command=save_changes
+        ).pack(fill="x", ipady=8)
+
+
+    def delete_shop(self):
+        """Delete the selected coffee shop after confirmation."""
+
+        # Get the selected row
+        selected = self.shop_table.selection()
+
+        # Check whether the user selected a record
+        if not selected:
+            messagebox.showwarning(
+                "No Selection",
+                "Please select a coffee shop to delete."
+            )
+            return
+
+        # Retrieve the selected record
+        values = self.shop_table.item(selected[0], "values")
+
+        # Extract the ID and name
+        shop_id = int(values[0])
+        shop_name = values[1]
+
+        # Ask the user to confirm deletion
+        confirm = messagebox.askyesno(
+            "Confirm Deletion",
+            f"Are you sure you want to delete {shop_name}?"
+        )
+
+        # Stop if the user cancels
+        if not confirm:
+            return
+
+        try:
+            # Send POST request to Flask
+            result = self.send_post_request(
+                f"/shops/delete/{shop_id}",
+                {}
+            )
+
+            if result.get("success"):
+
+                messagebox.showinfo(
+                    "Success",
+                    "Coffee shop deleted successfully!"
+                )
+
+                # Refresh the table
+                self.load_shops()
+
+        except HTTPError as error:
+            # Read Flask's error response
+            error_data = json.loads(
+                error.read().decode("utf-8")
+            )
+
+            messagebox.showerror(
+                "Server Error",
+                error_data.get("message", "Delete failed")
+            )
+
+        except (URLError, socket.timeout):
+            # Handle connection failure
+            messagebox.showerror(
+                "Connection Error",
+                "Cannot connect to Flask."
+            )
+
+
 
 
 # --------------------------------
