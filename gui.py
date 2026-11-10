@@ -9,6 +9,12 @@ import socket
 from urllib.request import urlopen
 from urllib.error import HTTPError, URLError
 
+# Used to encode POST form data
+from urllib.parse import urlencode
+
+# Used to create HTTP POST requests
+from urllib.request import Request
+
 
 # Flask backend address
 BASE_URL = "http://127.0.0.1:5050"
@@ -34,8 +40,259 @@ class CoffeeShopApp:
         # Build the interface
         self.create_widgets()
 
+
         # Load coffee shops from Flask when the app starts
         self.load_shops()
+
+
+    def create_add_form(self):
+        """Open a window for adding a new coffee shop."""
+
+        # Create a separate window
+        form_window = tk.Toplevel(self.root)
+        form_window.title("Add Coffee Shop")
+        form_window.geometry("450x550")
+        form_window.configure(bg="#F5F3EE")
+        form_window.resizable(False, False)
+
+        # Store form inputs so save_shop() can access them
+        self.form_window = form_window
+
+        # Main form container
+        form_frame = tk.Frame(
+            form_window,
+            bg="#F5F3EE",
+            padx=25,
+            pady=20
+        )
+        form_frame.pack(fill="both", expand=True)
+
+        # Form title
+        tk.Label(
+            form_frame,
+            text="Add New Coffee Shop",
+            font=("Arial", 18, "bold"),
+            bg="#F5F3EE",
+            fg="#244A3B"
+        ).pack(anchor="w", pady=(0, 20))
+
+        # -------------------------------
+        # SHOP NAME
+        # -------------------------------
+
+        tk.Label(
+            form_frame,
+            text="Shop Name *",
+            bg="#F5F3EE",
+            font=("Arial", 10, "bold")
+        ).pack(anchor="w")
+
+        self.name_entry = tk.Entry(
+            form_frame,
+            font=("Arial", 11)
+        )
+        self.name_entry.pack(fill="x", pady=(5, 15))
+
+        # -------------------------------
+        # CITY
+        # -------------------------------
+
+        tk.Label(
+            form_frame,
+            text="City *",
+            bg="#F5F3EE",
+            font=("Arial", 10, "bold")
+        ).pack(anchor="w")
+
+        self.city_entry = ttk.Combobox(
+            form_frame,
+            values=[
+                "Madinah",
+                "Riyadh",
+                "Jeddah",
+                "Makkah",
+                "Dammam",
+                "Khobar",
+                "Taif",
+                "Abha"
+            ],
+            state="readonly",
+            font=("Arial", 10)
+        )
+        self.city_entry.pack(fill="x", pady=(5, 15))
+
+        # -------------------------------
+        # RATING
+        # -------------------------------
+
+        tk.Label(
+            form_frame,
+            text="Rating (0 - 5) *",
+            bg="#F5F3EE",
+            font=("Arial", 10, "bold")
+        ).pack(anchor="w")
+
+        self.rating_entry = tk.Entry(
+            form_frame,
+            font=("Arial", 11)
+        )
+        self.rating_entry.pack(fill="x", pady=(5, 15))
+
+        # -------------------------------
+        # CATEGORY
+        # -------------------------------
+
+        tk.Label(
+            form_frame,
+            text="Category *",
+            bg="#F5F3EE",
+            font=("Arial", 10, "bold")
+        ).pack(anchor="w")
+
+        self.category_entry = ttk.Combobox(
+            form_frame,
+            values=[
+                "Specialty",
+                "Traditional",
+                "International",
+                "Other"
+            ],
+            state="readonly",
+            font=("Arial", 10)
+        )
+        self.category_entry.pack(fill="x", pady=(5, 15))
+
+        # -------------------------------
+        # NOTES
+        # -------------------------------
+
+        tk.Label(
+            form_frame,
+            text="Notes",
+            bg="#F5F3EE",
+            font=("Arial", 10, "bold")
+        ).pack(anchor="w")
+
+        self.notes_entry = tk.Text(
+            form_frame,
+            height=4,
+            font=("Arial", 10)
+        )
+        self.notes_entry.pack(fill="x", pady=(5, 20))
+
+        # -------------------------------
+        # SAVE BUTTON
+        # -------------------------------
+
+        tk.Button(
+            form_frame,
+            text="Save Coffee Shop",
+            bg="#244A3B",
+            fg="white",
+            font=("Arial", 11, "bold"),
+            relief="flat",
+            command=self.save_shop
+        ).pack(fill="x", ipady=8)
+
+    def send_post_request(self, endpoint, values):
+        """Send form data to a Flask POST endpoint."""
+
+        # Convert the dictionary into URL-encoded bytes
+        body = urlencode(values).encode("utf-8")
+
+        # Create a POST request
+        request = Request(
+            BASE_URL + endpoint,
+            data=body,
+            method="POST"
+        )
+
+        # Send the request and decode the JSON response
+        with urlopen(request, timeout=5) as response:
+            return json.loads(
+                response.read().decode("utf-8")
+            )
+
+    def save_shop(self):
+        """Validate form data and save a coffee shop."""
+
+        # Collect values from the form
+        name = self.name_entry.get().strip()
+        city = self.city_entry.get().strip()
+        rating = self.rating_entry.get().strip()
+        category = self.category_entry.get().strip()
+        notes = self.notes_entry.get("1.0", "end-1c").strip()
+
+        # Check required fields
+        if not name or not city or not rating or not category:
+            messagebox.showwarning(
+                "Missing Information",
+                "Please fill in all required fields."
+            )
+            return
+
+        # Validate rating before sending it to Flask
+        try:
+            rating_value = float(rating)
+
+            if not 0 <= rating_value <= 5:
+                raise ValueError
+
+        except ValueError:
+            messagebox.showerror(
+                "Invalid Rating",
+                "Rating must be a number between 0 and 5."
+            )
+            return
+
+        # Prepare data for the Flask backend
+        values = {
+            "name": name,
+            "city": city,
+            "rating": rating,
+            "category": category,
+            "notes": notes
+        }
+
+        try:
+            # Send the POST request to Flask
+            result = self.send_post_request(
+                "/shops/add",
+                values
+            )
+
+            # Check the server response
+            if result.get("success"):
+
+                messagebox.showinfo(
+                    "Success",
+                    "Coffee shop added successfully!"
+                )
+
+                # Close the form
+                self.form_window.destroy()
+
+                # Refresh the main table
+                self.load_shops()
+
+        except HTTPError as error:
+            # Read and display Flask's error response
+            error_data = json.loads(
+                error.read().decode("utf-8")
+            )
+
+            messagebox.showerror(
+                "Server Error",
+                error_data.get("message", "Request failed")
+            )
+
+        except (URLError, socket.timeout):
+            # Handle unavailable server or timeout
+            messagebox.showerror(
+                "Connection Error",
+                "Cannot connect to Flask. Please check the server."
+            )
+
 
     def configure_styles(self):
         """Configure the appearance of Tkinter widgets."""
@@ -142,16 +399,19 @@ class CoffeeShopApp:
         )
         self.total_label.pack(anchor="w")
 
+        
         # --------------------------------
         # TOOLBAR
         # --------------------------------
 
+        # Create the toolbar inside the main window
         toolbar = tk.Frame(
             main_frame,
             bg="#F5F3EE"
         )
         toolbar.pack(fill="x", pady=(0, 12))
 
+        # Section title
         tk.Label(
             toolbar,
             text="Coffee Shop Records",
@@ -160,21 +420,41 @@ class CoffeeShopApp:
             fg="#244A3B"
         ).pack(side="left")
 
+        # Create a container for the buttons
+        button_frame = tk.Frame(
+            toolbar,
+            bg="#F5F3EE"
+        )
+        button_frame.pack(side="right")
+
+        # Add Coffee Shop button
+        add_button = tk.Button(
+            button_frame,
+            text="+ Add Coffee Shop",
+            font=("Arial", 10, "bold"),
+            bg="#244A3B",
+            fg="white",
+            relief="flat",
+            padx=15,
+            pady=7,
+            command=self.create_add_form
+        )
+        add_button.pack(side="left", padx=(0, 8))
+
         # Refresh button
         refresh_button = tk.Button(
-            toolbar,
+            button_frame,
             text="Refresh",
             font=("Arial", 10, "bold"),
             bg="#244A3B",
             fg="white",
-            activebackground="#315E4B",
-            activeforeground="white",
             relief="flat",
             padx=15,
             pady=7,
             command=self.load_shops
         )
-        refresh_button.pack(side="right")
+        refresh_button.pack(side="left")
+
 
         # --------------------------------
         # COFFEE SHOP TABLE
