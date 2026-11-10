@@ -1,6 +1,14 @@
-
 import tkinter as tk
 from tkinter import ttk, messagebox
+
+# Used to create a background worker thread
+import threading
+
+# Used to safely send results from the worker to Tkinter
+import queue
+
+# Import our report generation function
+from report import generate_report
 
 import json
 import socket
@@ -472,6 +480,24 @@ class CoffeeShopApp:
             command=self.show_statistics
         )
         statistics_button.pack(side="left", padx=(8, 0))
+
+
+        # Generate Report button
+        self.report_button = tk.Button(
+            button_frame,
+            text="Generate Report",
+            font=("Arial", 10, "bold"),
+            bg="#527A68",
+            fg="white",
+            relief="flat",
+            padx=15,
+            pady=7,
+            command=self.start_report_generation
+        )
+
+        # Display the report button
+        self.report_button.pack(side="left", padx=(8, 0))
+
 
         # Edit selected coffee shop button
         edit_button = tk.Button(
@@ -1292,6 +1318,114 @@ class CoffeeShopApp:
                 bg="white",
                 fg="#244A3B"
             ).pack(anchor="w", pady=3)
+
+    
+    def start_report_generation(self):
+        """Start report generation in a background thread."""
+
+        # Prevent starting multiple reports simultaneously
+        self.report_button.config(state="disabled")
+
+        # Display a status message
+        self.status_label.config(
+            text="Generating report...",
+            fg="#D69E36"
+        )
+
+        # Create a queue for communication between threads
+        self.report_queue = queue.Queue()
+
+        # Create a worker thread
+        self.report_thread = threading.Thread(
+            target=self.report_worker,
+            daemon=True
+        )
+
+        # Start the worker thread
+        self.report_thread.start()
+
+        # Check for the worker's result without freezing Tkinter
+        self.root.after(100, self.check_report_status)
+
+    def report_worker(self):
+        """Retrieve data and generate the report in the worker thread."""
+
+        try:
+            # Retrieve all coffee shops from Flask
+            with urlopen(BASE_URL + "/shops", timeout=5) as response:
+
+                # Decode the JSON response
+                result = json.loads(
+                    response.read().decode("utf-8")
+                )
+
+            # Check whether Flask returned success
+            if not result.get("success"):
+                raise ValueError("Could not retrieve coffee shops.")
+
+            # Get all coffee shop records
+            shops = result["data"]
+
+            # Generate the text report
+            report_path = generate_report(shops)
+
+            # Send the successful result to the main thread
+            self.report_queue.put(
+                ("success", str(report_path))
+            )
+
+        except Exception as error:
+            # Send the error message to the main thread
+            self.report_queue.put(
+                ("error", str(error))
+            )
+
+    def check_report_status(self):
+        """Check whether the worker thread has finished."""
+
+        # Check whether a result is available
+        try:
+            status, result = self.report_queue.get_nowait()
+
+            # The worker has finished, so join it safely
+            self.report_thread.join()
+
+            # Enable the report button again
+            self.report_button.config(state="normal")
+
+            if status == "success":
+
+                # Update the status bar
+                self.status_label.config(
+                    text="Report generated successfully!",
+                    fg="#244A3B"
+                )
+
+                # Display the report location
+                messagebox.showinfo(
+                    "Report Generated",
+                    f"Your report was generated successfully!\n\n"
+                    f"Location:\n{result}"
+                )
+
+            else:
+
+                # Display the error
+                self.status_label.config(
+                    text="Report generation failed.",
+                    fg="red"
+                )
+
+                messagebox.showerror(
+                    "Report Error",
+                    f"Could not generate report:\n{result}"
+                )
+
+        except queue.Empty:
+            # The worker is still running.
+            # Check again after 100 milliseconds.
+            self.root.after(100, self.check_report_status)
+
 
 
 
