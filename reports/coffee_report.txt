@@ -2,18 +2,18 @@
        SAUDI COFFEE SHOP REPORT
 =============================================
 
-Generated: 2026-11-11 01:46:03
+Generated: 2026-11-12 17:20:17
 
 GENERAL STATISTICS
 ---------------------------------------------
 Total Coffee Shops: 5
-Average Rating: 4.10 / 5
+Average Rating: 4.00 / 5
 
 HIGHEST-RATED COFFEE SHOP
 ---------------------------------------------
-Name: ggg
-City: Makkah
-Rating: 5.0 / 5
+Name: Brew 92
+City: Madinah
+Rating: 4.5 / 5
 
 COFFEE SHOPS BY CITY
 ---------------------------------------------
@@ -48,7 +48,7 @@ Notes: None
 ID: 7
 Name: ggg
 City: Makkah
-Rating: 5.0
+Rating: 4.5
 Category: International
 Notes: None
 ---------------------------------------------

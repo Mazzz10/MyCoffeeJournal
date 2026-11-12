@@ -747,25 +747,49 @@ class CoffeeShopApp:
                 fg="red"
             )
 
-        except URLError:
-            # Handle unavailable Flask server
-            self.status_label.config(
-                text="Connection failed. Make sure Flask is running.",
-                fg="red"
+            # Show an error popup
+            messagebox.showerror(
+                "Server Error",
+                f"Flask returned an error: HTTP {error.code}"
             )
 
         except socket.timeout:
-            # Handle connection timeout
+            # Handle requests that take too long
             self.status_label.config(
-                text="Connection timed out. Please try again.",
+                text="Connection timed out.",
                 fg="red"
             )
 
+            # Inform the user about the timeout
+            messagebox.showerror(
+                "Connection Timeout",
+                "The Flask server did not respond in time."
+            )
+
+        except URLError as error:
+            # Handle unavailable Flask server
+            self.status_label.config(
+                text="Connection failed. Flask is unavailable.",
+                fg="red"
+            )
+
+            # Show the connection error
+            messagebox.showerror(
+                "Connection Error",
+                "Cannot connect to Flask!\n\n"
+                "Make sure the Flask server is running."
+            )
+
         except (ValueError, KeyError, json.JSONDecodeError):
-            # Handle invalid or unexpected server responses
+            # Handle unexpected or invalid server responses
             self.status_label.config(
                 text="Invalid response received from server.",
                 fg="red"
+            )
+
+            messagebox.showerror(
+                "Response Error",
+                "The server returned an invalid response."
             )
 
     def edit_shop(self):
