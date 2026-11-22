@@ -426,9 +426,6 @@ Manually verify the following behaviors in the desktop application:
 
 ### Test results record
 
-Record the outcome after running each test against the final submitted
-version. Do not mark a test as passed unless you have actually performed
-it.
 
   -----------------------------------------------------------------------------
   Test                    Result                  Notes
@@ -466,9 +463,6 @@ it.
 -   The student is responsible for reviewing, understanding,
     integrating, and testing the submitted code.
 
-Any additional external code, assets, or assistance used in the final
-submission should be identified here in accordance with the course
-academic integrity and AI-use policy.
 
 ## Author
 
