@@ -426,33 +426,19 @@ Manually verify the following behaviors in the desktop application:
 
 ### Test results record
 
+| Test | Result | Notes |
+|---|---|---|
+| API: add shop | Pass | Run `python test_api.py` |
+| API: update shop | Pass | Run `python test_api.py` |
+| API: invalid rating | Pass | Confirm HTTP 400 |
+| API: delete shop | Pass | Run `python test_api.py` |
+| API: unknown ID | Pass | Confirm HTTP 404 |
+| Server connection | Pass | Run `python test_connection.py` |
+| GUI: CRUD and filters | Pass | Verify through Tkinter |
+| GUI: server unavailable/recovery | Pass | Stop and restart Flask |
+| Database persistence | Pass | Restart both programs |
+| Report generation | Pass | Check `reports/coffee_report.txt` |
 
-  -----------------------------------------------------------------------------
-  Test                    Result                  Notes
-  ----------------------- ----------------------- -----------------------------
-  API: add shop           Pass         Run `python test_api.py`
-
-  API: update shop        Pass         Run `python test_api.py`
-
-  API: invalid rating     Pass         Confirm HTTP 400
-
-  API: delete shop        Pass         Run `python test_api.py`
-
-  API: unknown ID         Pass         Confirm HTTP 404
-
-  Server connection       Pass         Run
-                                                  `python test_connection.py`
-
-  GUI: CRUD and filters   Pass         Verify through Tkinter
-
-  GUI: server             Pass         Stop and restart Flask
-  unavailable/recovery                            
-
-  Database persistence    Pass         Restart both programs
-
-  Report generation       Pass         Check
-                                                  `reports/coffee_report.txt`
-  -----------------------------------------------------------------------------
 
 ## Credits and AI Assistance
 
