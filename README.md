@@ -10,15 +10,16 @@ filter coffee shop records, view statistics, and generate a text report.
 
 -   **Coffee shop management:** Add, view, edit, and delete coffee shop
     records.
--   **Search:** Search records by coffee shop name as the user types.
+-   **Instant search:** Search records by coffee shop name as the user
+    types.
 -   **Filtering:** Filter records by city and category.
 -   **Statistics dashboard:** View the total number of shops, average
     rating, highest-rated shop, and number of shops by city.
 -   **Report generation:** Generate a UTF-8 text report containing
-    statistics and all saved records.
+    summary statistics and all saved records.
 -   **Background processing:** Generate reports in a daemon worker
-    thread while Tkinter remains responsive.
--   **Persistent storage:** Save records in an SQLite database.
+    thread while the Tkinter interface remains responsive.
+-   **Persistent storage:** Store records in an SQLite database.
 -   **Validation and error handling:** Validate required fields and
     ratings; handle HTTP errors, unavailable servers, and connection
     timeouts.
@@ -35,7 +36,7 @@ filter coffee shop records, view statistics, and generate a text report.
   `urllib.parse`     Encode POST form data
   `json`             Decode JSON responses
   `threading`        Run report generation in a background thread
-  `queue`            Pass worker results to the Tkinter thread
+  `queue`            Pass worker results safely to the Tkinter thread
   `pathlib`          Build database and report paths
 
 ## Architecture
@@ -82,12 +83,12 @@ The GUI does not connect directly to SQLite.
 ``` text
 SaudiCoffeeGuide/
 ├── database/
-│   └── coffee_shops.db       # Created automatically
+│   └── coffee_shops.db       # SQLite database (created/used at runtime)
 ├── reports/
-│   └── coffee_report.txt     # Created when a report is generated
+│   └── coffee_report.txt     # Generated when a report is created
 ├── app.py                    # Flask routes and backend validation
 ├── database.py               # DatabaseManager and SQLite operations
-├── gui.py                    # Tkinter application
+├── gui.py                    # Tkinter application and HTTP client
 ├── report.py                 # Text report generation
 ├── test_api.py               # API CRUD and validation test script
 ├── test_connection.py        # Basic Flask connectivity test
@@ -96,8 +97,10 @@ SaudiCoffeeGuide/
 └── README.md
 ```
 
-The database and report files are created at runtime. A fresh clone does
-not need to contain either file.
+The `database` and `reports` directories/files are created as needed.
+The application initializes the database table automatically when the
+Flask backend starts. A generated report is not required to run the
+application.
 
 ## Installation and Setup
 
@@ -140,11 +143,10 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-`requirements.txt` pins Flask 3.1.3 and its listed dependencies. The
-other modules used by the application, including `sqlite3`, `tkinter`,
-`threading`, `queue`, `json`, `pathlib`, and `urllib`, are from the
-Python standard library. Tkinter must be available in the local Python
-installation.
+`requirements.txt` contains Flask and its pinned dependencies. Modules
+such as `sqlite3`, `tkinter`, `threading`, `queue`, `json`, `pathlib`,
+and `urllib` are part of Python's standard library. Tkinter must also be
+available in the local Python installation.
 
 ## Running the Application
 
@@ -172,8 +174,8 @@ python gui.py
 ```
 
 The Saudi Coffee Shop Guide window opens and requests the saved records
-from Flask. Users normally interact with the Tkinter window; they do not
-need to send HTTP requests manually.
+from Flask. During normal use, users interact with the Tkinter window
+and do not need to send HTTP requests manually.
 
 ## Database Initialization and Design
 
@@ -188,10 +190,7 @@ The database is initialized automatically when `app.py` creates the
 
 `create_table()` uses `CREATE TABLE IF NOT EXISTS`. It creates the table
 if it is missing and does not drop existing records when the application
-starts.
-
-No manual SQL command is required. Start the Flask backend to initialize
-the database.
+starts. No manual SQL command is required.
 
 ### Table: `coffee_shops`
 
@@ -231,7 +230,7 @@ The Flask backend in `app.py` provides these routes:
 The API returns JSON responses. Missing required values, non-numeric
 ratings, and ratings outside 0--5 return HTTP 400. A request for a
 record that does not exist returns HTTP 404. Unexpected backend errors
-are logged and return HTTP 500.
+return HTTP 500.
 
 The GUI uses `urlopen()` to send requests, `urlencode()` to encode POST
 form data, and `json.loads()` to decode JSON responses. The GUI handles
@@ -239,87 +238,97 @@ HTTP errors, URL/connection errors, and socket timeouts.
 
 ## Python Course Topics and Implementation Locations
 
-The table identifies the relevant classes, methods, and functions in the
+The following table identifies where the course topics appear in the
 submitted source files.
 
-  -----------------------------------------------------------------------------------
-  Course topic            How it is used          File and implementation location
-  ----------------------- ----------------------- -----------------------------------
-  Variables and data      Store form values,      Throughout `app.py`, `database.py`,
-  types                   records, IDs, ratings,  `gui.py`, and `report.py`
-                          and status values       
+  ------------------------------------------------------------------------------
+  Course topic            Implementation evidence File and relevant location
+  ----------------------- ----------------------- ------------------------------
+  Python, variables and   Form values, records,   Throughout `app.py`,
+  data types              IDs, ratings, and       `database.py`, `gui.py`, and
+                          status values           `report.py`
 
-  Functions               Divide the application  Flask route functions in `app.py`;
-                          into reusable           methods in `DatabaseManager` and
-                          operations              `CoffeeShopApp`;
-                                                  `generate_report()`
+  Functions               Reusable operations and Flask route functions in
+                          route handlers          `app.py`; methods in
+                                                  `DatabaseManager` and
+                                                  `CoffeeShopApp`;
+                                                  `generate_report()` in
+                                                  `report.py`
 
-  Conditions              Validate fields, check  `add_shop()` and `update_shop()` in
-                          ratings, handle missing `app.py`; `save_shop()`,
-                          records, and filter     `apply_filters()`, and
-                          records                 `delete_shop()` in `gui.py`
+  Conditions              Validate fields, check  `add_shop()` and
+                          ratings, handle missing `update_shop()` in `app.py`;
+                          records, and filter     `save_shop()`,
+                          records                 `apply_filters()`, and
+                                                  `delete_shop()` in `gui.py`
 
-  Loops                   Process records and     `get_all_shops()` in `database.py`;
-                          populate the table and  `apply_filters()` and
-                          report                  `show_statistics()` in `gui.py`;
-                                                  `generate_report()` in `report.py`
+  Loops                   Process records,        `get_all_shops()` in
+                          populate the table, and `database.py`;
+                          generate the report     `apply_filters()` and
+                                                  `show_statistics()` in
+                                                  `gui.py`; `generate_report()`
+                                                  in `report.py`
 
   Lists                   Hold records returned   `self.all_shops` and
                           by the API and iterate  `apply_filters()` in `gui.py`;
                           over shops              `generate_report(shops)` in
                                                   `report.py`
 
-  Dictionaries            Represent records,      `get_all_shops()` in `database.py`;
-                          submitted form values,  form/JSON handling in `app.py`;
-                          JSON responses, and     `city_counts` in
-                          city counts             `show_statistics()` and
+  Dictionaries            Represent records, form `get_all_shops()` in
+                          values, JSON responses, `database.py`; form/JSON
+                          and city counts         handling in `app.py`;
+                                                  `city_counts` in
+                                                  `show_statistics()` and
                                                   `generate_report()`
 
-  Classes and objects     Organize the GUI and    `CoffeeShopApp` in `gui.py`;
-                          database functionality  `DatabaseManager` in `database.py`
+  Classes and objects     Organize GUI and        `CoffeeShopApp` in `gui.py`;
+                          database functionality  `DatabaseManager` in
+                                                  `database.py`
 
   Exception handling      Handle invalid ratings, Route functions in `app.py`;
-                          HTTP errors, connection `load_shops()`, `save_shop()`,
-                          failures, timeouts, and nested `save_changes()` in
-                          report-worker errors    `edit_shop()`, `delete_shop()`, and
-                                                  `report_worker()` in `gui.py`
+                          HTTP errors, connection request/CRUD handlers and
+                          failures, timeouts, and `report_worker()` in `gui.py`
+                          report-worker errors    
 
-  SQLite and SQL          Create the table and    `DatabaseManager.create_table()`,
-                          perform parameterized   `add_shop()`, `get_all_shops()`,
-                          CRUD queries            `get_shop()`, `update_shop()`, and
-                                                  `delete_shop()` in `database.py`
+  SQLite and SQL          Create the table and    `create_table()`,
+                          perform parameterized   `add_shop()`,
+                          CRUD queries            `get_all_shops()`,
+                                                  `get_shop()`, `update_shop()`,
+                                                  and `delete_shop()` in
+                                                  `database.py`
 
-  Tkinter                 Build windows, forms,   `CoffeeShopApp.create_widgets()`,
-                          buttons, labels,        `create_add_form()`, `edit_shop()`,
-                          filters, and the        and `show_statistics()` in `gui.py`
-                          records table           
+  Tkinter                 Build windows, forms,   `create_widgets()`,
+                          buttons, labels,        `create_add_form()`,
+                          filters, and the        `edit_shop()`, and
+                          records table           `show_statistics()` in
+                                                  `gui.py`
 
-  Client-server           Send GET/POST requests  `CoffeeShopApp.load_shops()` and
-  communication           and decode JSON replies `send_post_request()` in `gui.py`;
-                                                  routes in `app.py`
+  Client-server           Send GET/POST requests  `load_shops()` and
+  communication           and decode JSON replies `send_post_request()` in
+                                                  `gui.py`; routes in `app.py`
 
   Flask                   Define API routes,      `get_shops()`, `get_shop()`,
-                          validate submitted      `add_shop()`, `update_shop()`, and
-                          fields, and return      `delete_shop()` in `app.py`
-                          JSON/status codes       
+                          validate submitted      `add_shop()`, `update_shop()`,
+                          fields, and return      and `delete_shop()` in
+                          JSON/status codes       `app.py`
 
-  File handling           Create and write the    `generate_report()` in `report.py`
-                          UTF-8 report using a    
+  File handling           Create and write the    `generate_report()` in
+                          UTF-8 report using a    `report.py`
                           `with` statement        
 
   Threading and queues    Run report generation   `start_report_generation()`,
                           in a daemon worker      `report_worker()`, and
-                          thread and pass its     `check_report_status()` in `gui.py`
-                          result to Tkinter       
+                          thread and pass its     `check_report_status()` in
+                          result to Tkinter       `gui.py`
 
-  Functional tools        Use `lambda` as a key   `show_statistics()` in `gui.py`;
-                          function when finding   `generate_report()` in `report.py`
-                          the highest rating      
+  Functional tools        Use `lambda` as a key   `show_statistics()` in
+                          function when finding   `gui.py`; `generate_report()`
+                          the highest rating      in `report.py`
 
-  Path handling           Build database/report   `DatabaseManager.__init__()` in
-                          paths and create        `database.py`; `generate_report()`
-                          directories             in `report.py`
-  -----------------------------------------------------------------------------------
+  Path handling           Build database/report   `DatabaseManager.__init__()`
+                          paths and create        in `database.py`;
+                          directories             `generate_report()` in
+                                                  `report.py`
+  ------------------------------------------------------------------------------
 
 ## Report Generation
 
@@ -370,7 +379,7 @@ Start Flask first in a separate terminal:
 python app.py
 ```
 
-Then run:
+Then, in another terminal, run:
 
 ``` bash
 python test_api.py
@@ -380,7 +389,7 @@ python test_api.py
 
 -   Add a coffee shop.
 -   Update the newly added coffee shop.
--   Submit an invalid rating (10) and inspect the validation response.
+-   Submit an invalid rating (`10`) and inspect the validation response.
 -   Delete the newly added coffee shop.
 -   Request an unknown shop ID.
 -   Retrieve and display the remaining coffee shops.
@@ -400,9 +409,9 @@ This checks whether `http://127.0.0.1:5050/shops` responds within five
 seconds. It prints a success message and response status if the server
 is reachable, or a timeout/unavailable message otherwise.
 
-### 3. GUI checks
+### 3. GUI and persistence checks
 
-Also verify the following behaviors manually in the desktop application:
+Manually verify the following behaviors in the desktop application:
 
 -   Add, edit, and delete a coffee shop.
 -   Search by name and filter by city/category.
@@ -410,13 +419,43 @@ Also verify the following behaviors manually in the desktop application:
 -   Open the statistics dashboard.
 -   Try Edit or Delete without selecting a row.
 -   Try missing required fields and an invalid rating.
--   Stop Flask and use Refresh to confirm the connection error is
+-   Stop Flask and use Refresh to confirm that a connection error is
     displayed; restart Flask and refresh again.
 -   Generate a report and inspect `reports/coffee_report.txt`.
 -   Restart the applications and confirm that database records remain.
 
-Only mark a manual check as passed after running it on the final
-version.
+### Test results record
+
+Record the outcome after running each test against the final submitted
+version. Do not mark a test as passed unless you have actually performed
+it.
+
+  -----------------------------------------------------------------------------
+  Test                    Result                  Notes
+  ----------------------- ----------------------- -----------------------------
+  API: add shop           Pass         Run `python test_api.py`
+
+  API: update shop        Pass         Run `python test_api.py`
+
+  API: invalid rating     Pass         Confirm HTTP 400
+
+  API: delete shop        Pass         Run `python test_api.py`
+
+  API: unknown ID         Pass         Confirm HTTP 404
+
+  Server connection       Pass         Run
+                                                  `python test_connection.py`
+
+  GUI: CRUD and filters   Pass         Verify through Tkinter
+
+  GUI: server             Pass         Stop and restart Flask
+  unavailable/recovery                            
+
+  Database persistence    Pass         Restart both programs
+
+  Report generation       Pass         Check
+                                                  `reports/coffee_report.txt`
+  -----------------------------------------------------------------------------
 
 ## Credits and AI Assistance
 
@@ -435,20 +474,7 @@ academic integrity and AI-use policy.
 
 -   **Student name:** Mazen Hassan Bafaqih
 -   **Student ID:** 443043723
--   **Course:** Advanced Programming 462
+-   **Course:** Advanced Programming
 -   **GitHub:** https://github.com/Mazzz10/SaudiCoffeeGuide
 
-## Submission Notes
 
-Before submitting:
-
--   Make sure the GitHub repository contains the same final source files
-    as the ZIP.
--   Include the source files, `requirements.txt`, `README.md`, and
-    presentation slides in the ZIP.
--   Include any data files required by the instructor.
--   Name the ZIP `Project_443043723.zip`.
--   Do not include the virtual environment, Python cache folders, or
-    passwords.
--   If the GitHub repository is private, invite the instructor's GitHub
-    account (`majedoh`) as a collaborator and confirm access.
