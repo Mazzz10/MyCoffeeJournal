@@ -35,7 +35,7 @@ class CoffeeShopApp:
         self.root = root
 
         # Configure the application window
-        self.root.title("Saudi Coffee Shop Guide")
+        self.root.title("My Coffee Journal")
         self.root.geometry("1050x650")
         self.root.minsize(850, 500)
 
@@ -364,7 +364,7 @@ class CoffeeShopApp:
         # Application title
         title = tk.Label(
             header_frame,
-            text="Saudi Coffee Shop Guide",
+            text="My Coffee Journal",
             font=("Arial", 22, "bold"),
             bg="#F5F3EE",
             fg="#244A3B"

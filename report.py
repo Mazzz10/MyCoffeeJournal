@@ -75,7 +75,7 @@ def generate_report(shops):
 
         # Write the report heading
         file.write("=" * 45 + "\n")
-        file.write("       SAUDI COFFEE SHOP REPORT\n")
+        file.write("       MY COFFEE JOURNAL REPORT\n")
         file.write("=" * 45 + "\n\n")
 
         # Write the report generation date and time

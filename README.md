@@ -1,4 +1,4 @@
-# Saudi Coffee Shop Guide ☕
+# My Coffee Journal ☕
 
 A Python desktop application for discovering and managing coffee shops
 across Saudi Arabia. Users can add, view, edit, delete, search, and
@@ -107,8 +107,8 @@ application.
 ### 1. Clone the repository
 
 ``` bash
-git clone https://github.com/Mazzz10/SaudiCoffeeGuide.git
-cd SaudiCoffeeGuide
+git clone https://github.com/Mazzz10/SaudiCoffeeGuide.git MyCoffeeJournal
+cd MyCoffeeJournal
 ```
 
 ### 2. Create a virtual environment
@@ -173,7 +173,7 @@ Keep this terminal running.
 python gui.py
 ```
 
-The Saudi Coffee Shop Guide window opens and requests the saved records
+The My Coffee Journal window opens and requests the saved records
 from Flask. During normal use, users interact with the Tkinter window
 and do not need to send HTTP requests manually.
 
