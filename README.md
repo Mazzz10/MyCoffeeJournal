@@ -1,43 +1,45 @@
 # My Coffee Journal ☕
 
-A Python desktop application for discovering and managing coffee shops
-across Saudi Arabia. Users can add, view, edit, delete, search, and
-filter coffee shop records, view statistics, and generate a text report.
+**My Coffee Journal** is a Python desktop application for keeping a
+personal record of coffee shops across Saudi Arabia. It lets users
+discover and organize their coffee shop entries, add ratings and notes,
+search and filter saved places, view statistics, and generate a report.
 
-**GitHub repository:** https://github.com/Mazzz10/SaudiCoffeeGuide
+**GitHub repository:** https://github.com/Mazzz10/MyCoffeeJournal
 
 ## Features
 
--   **Coffee shop management:** Add, view, edit, and delete coffee shop
+
+- **Coffee shop management:** Add, view, edit, and delete coffee shop
     records.
--   **Instant search:** Search records by coffee shop name as the user
+- **Instant search:** Search records by coffee shop name as the user
     types.
--   **Filtering:** Filter records by city and category.
--   **Statistics dashboard:** View the total number of shops, average
+- **Filtering:** Filter records by city and category.
+- **Statistics dashboard:** View the total number of shops, average
     rating, highest-rated shop, and number of shops by city.
--   **Report generation:** Generate a UTF-8 text report containing
+- **Report generation:** Generate a UTF-8 text report containing
     summary statistics and all saved records.
--   **Background processing:** Generate reports in a daemon worker
+- **Background processing:** Generate reports in a daemon worker
     thread while the Tkinter interface remains responsive.
--   **Persistent storage:** Store records in an SQLite database.
--   **Validation and error handling:** Validate required fields and
+- **Persistent storage:** Store records in an SQLite database.
+- **Validation and error handling:** Validate required fields and
     ratings; handle HTTP errors, unavailable servers, and connection
     timeouts.
 
 ## Technologies
 
-  Technology         Purpose
-  ------------------ --------------------------------------------------
-  Python             Main programming language
-  Tkinter / ttk      Desktop graphical user interface
-  Flask              Backend HTTP API
-  SQLite             Persistent database
-  `urllib.request`   Send HTTP requests from the GUI and test scripts
-  `urllib.parse`     Encode POST form data
-  `json`             Decode JSON responses
-  `threading`        Run report generation in a background thread
-  `queue`            Pass worker results safely to the Tkinter thread
-  `pathlib`          Build database and report paths
+| Technology | Purpose |
+|---|---|
+| Python | Main programming language |
+| Tkinter / ttk | Desktop graphical user interface |
+| Flask | Backend HTTP API |
+| SQLite | Persistent database |
+| `urllib.request` | Send HTTP requests from the GUI and test scripts |
+| `urllib.parse` | Encode POST form data |
+| `json` | Decode JSON responses |
+| `threading` | Run report generation in a background thread |
+| `queue` | Pass worker results safely to the Tkinter thread |
+| `pathlib` | Build database and report paths |
 
 ## Architecture
 
@@ -81,7 +83,7 @@ The GUI does not connect directly to SQLite.
 ## Project Structure
 
 ``` text
-SaudiCoffeeGuide/
+MyCoffeeJournal/
 ├── database/
 │   └── coffee_shops.db       # SQLite database (created/used at runtime)
 ├── reports/
@@ -107,7 +109,7 @@ application.
 ### 1. Clone the repository
 
 ``` bash
-git clone https://github.com/Mazzz10/SaudiCoffeeGuide.git MyCoffeeJournal
+git clone https://github.com/Mazzz10/MyCoffeeJournal.git MyCoffeeJournal
 cd MyCoffeeJournal
 ```
 
@@ -194,22 +196,14 @@ starts. No manual SQL command is required.
 
 ### Table: `coffee_shops`
 
-  -------------------------------------------------------------------------------------
-  Column                  SQLite type                           Purpose
-  ----------------------- ------------------------------------- -----------------------
-  `id`                    `INTEGER PRIMARY KEY AUTOINCREMENT`   Unique record
-                                                                identifier
-
-  `name`                  `TEXT NOT NULL`                       Coffee shop name
-
-  `city`                  `TEXT NOT NULL`                       City
-
-  `rating`                `REAL NOT NULL`                       Rating from 0 to 5
-
-  `category`              `TEXT NOT NULL`                       Coffee shop category
-
-  `notes`                 `TEXT`                                Optional notes
-  -------------------------------------------------------------------------------------
+| Column | SQLite type | Purpose |
+|---|---|---|
+| `id` | `INTEGER PRIMARY KEY AUTOINCREMENT` | Unique record identifier |
+| `name` | `TEXT NOT NULL` | Coffee shop name |
+| `city` | `TEXT NOT NULL` | City |
+| `rating` | `REAL NOT NULL` | Rating from 0 to 5 |
+| `category` | `TEXT NOT NULL` | Coffee shop category |
+| `notes` | `TEXT` | Optional notes |
 
 Each database operation opens its own SQLite connection and closes it in
 a `finally` block. Operations that change data call `commit()`. SQL
@@ -219,13 +213,13 @@ values are passed using `?` placeholders.
 
 The Flask backend in `app.py` provides these routes:
 
-  HTTP method   Endpoint                    Purpose                            Success status
-  ------------- --------------------------- -------------------------------- ----------------
-  GET           `/shops`                    Retrieve all coffee shops                     200
-  GET           `/shops/<shop_id>`          Retrieve one coffee shop by ID                200
-  POST          `/shops/add`                Add a coffee shop                             201
-  POST          `/shops/update/<shop_id>`   Update a coffee shop                          200
-  POST          `/shops/delete/<shop_id>`   Delete a coffee shop                          200
+| HTTP method | Endpoint | Purpose | Success status |
+|---|---|---|---:|
+| GET | `/shops` | Retrieve all coffee shops | 200 |
+| GET | `/shops/<shop_id>` | Retrieve one coffee shop by ID | 200 |
+| POST | `/shops/add` | Add a coffee shop | 201 |
+| POST | `/shops/update/<shop_id>` | Update a coffee shop | 200 |
+| POST | `/shops/delete/<shop_id>` | Delete a coffee shop | 200 |
 
 The API returns JSON responses. Missing required values, non-numeric
 ratings, and ratings outside 0--5 return HTTP 400. A request for a
@@ -241,94 +235,24 @@ HTTP errors, URL/connection errors, and socket timeouts.
 The following table identifies where the course topics appear in the
 submitted source files.
 
-  ------------------------------------------------------------------------------
-  Course topic            Implementation evidence File and relevant location
-  ----------------------- ----------------------- ------------------------------
-  Python, variables and   Form values, records,   Throughout `app.py`,
-  data types              IDs, ratings, and       `database.py`, `gui.py`, and
-                          status values           `report.py`
-
-  Functions               Reusable operations and Flask route functions in
-                          route handlers          `app.py`; methods in
-                                                  `DatabaseManager` and
-                                                  `CoffeeShopApp`;
-                                                  `generate_report()` in
-                                                  `report.py`
-
-  Conditions              Validate fields, check  `add_shop()` and
-                          ratings, handle missing `update_shop()` in `app.py`;
-                          records, and filter     `save_shop()`,
-                          records                 `apply_filters()`, and
-                                                  `delete_shop()` in `gui.py`
-
-  Loops                   Process records,        `get_all_shops()` in
-                          populate the table, and `database.py`;
-                          generate the report     `apply_filters()` and
-                                                  `show_statistics()` in
-                                                  `gui.py`; `generate_report()`
-                                                  in `report.py`
-
-  Lists                   Hold records returned   `self.all_shops` and
-                          by the API and iterate  `apply_filters()` in `gui.py`;
-                          over shops              `generate_report(shops)` in
-                                                  `report.py`
-
-  Dictionaries            Represent records, form `get_all_shops()` in
-                          values, JSON responses, `database.py`; form/JSON
-                          and city counts         handling in `app.py`;
-                                                  `city_counts` in
-                                                  `show_statistics()` and
-                                                  `generate_report()`
-
-  Classes and objects     Organize GUI and        `CoffeeShopApp` in `gui.py`;
-                          database functionality  `DatabaseManager` in
-                                                  `database.py`
-
-  Exception handling      Handle invalid ratings, Route functions in `app.py`;
-                          HTTP errors, connection request/CRUD handlers and
-                          failures, timeouts, and `report_worker()` in `gui.py`
-                          report-worker errors    
-
-  SQLite and SQL          Create the table and    `create_table()`,
-                          perform parameterized   `add_shop()`,
-                          CRUD queries            `get_all_shops()`,
-                                                  `get_shop()`, `update_shop()`,
-                                                  and `delete_shop()` in
-                                                  `database.py`
-
-  Tkinter                 Build windows, forms,   `create_widgets()`,
-                          buttons, labels,        `create_add_form()`,
-                          filters, and the        `edit_shop()`, and
-                          records table           `show_statistics()` in
-                                                  `gui.py`
-
-  Client-server           Send GET/POST requests  `load_shops()` and
-  communication           and decode JSON replies `send_post_request()` in
-                                                  `gui.py`; routes in `app.py`
-
-  Flask                   Define API routes,      `get_shops()`, `get_shop()`,
-                          validate submitted      `add_shop()`, `update_shop()`,
-                          fields, and return      and `delete_shop()` in
-                          JSON/status codes       `app.py`
-
-  File handling           Create and write the    `generate_report()` in
-                          UTF-8 report using a    `report.py`
-                          `with` statement        
-
-  Threading and queues    Run report generation   `start_report_generation()`,
-                          in a daemon worker      `report_worker()`, and
-                          thread and pass its     `check_report_status()` in
-                          result to Tkinter       `gui.py`
-
-  Functional tools        Use `lambda` as a key   `show_statistics()` in
-                          function when finding   `gui.py`; `generate_report()`
-                          the highest rating      in `report.py`
-
-  Path handling           Build database/report   `DatabaseManager.__init__()`
-                          paths and create        in `database.py`;
-                          directories             `generate_report()` in
-                                                  `report.py`
-  ------------------------------------------------------------------------------
+| Course topic | Implementation evidence | File and relevant location |
+|---|---|---|
+| Python, variables, and data types | Form values, records, IDs, ratings, and status values | Throughout `app.py`, `database.py`, `gui.py`, and `report.py` |
+| Functions | Reusable operations and route handlers | Flask routes in `app.py`; methods in `DatabaseManager` and `CoffeeShopApp`; `generate_report()` in `report.py` |
+| Conditions | Validate fields and ratings, handle missing records, and filter records | `add_shop()` and `update_shop()` in `app.py`; `save_shop()`, `apply_filters()`, and `delete_shop()` in `gui.py` |
+| Loops | Process records, populate the table, and generate reports | `get_all_shops()` in `database.py`; `apply_filters()` and `show_statistics()` in `gui.py`; `generate_report()` in `report.py` |
+| Lists | Hold records returned by the API and iterate over shops | `self.all_shops` and `apply_filters()` in `gui.py`; `generate_report(shops)` in `report.py` |
+| Dictionaries | Represent records, form values, JSON responses, and city counts | `get_all_shops()` in `database.py`; form/JSON handling in `app.py`; `city_counts` in `show_statistics()` and `generate_report()` |
+| Classes and objects | Organize GUI and database functionality | `CoffeeShopApp` in `gui.py`; `DatabaseManager` in `database.py` |
+| Exception handling | Handle invalid ratings, HTTP errors, connection failures, timeouts, and report-worker errors | Route functions in `app.py`; request/CRUD handlers and `report_worker()` in `gui.py` |
+| SQLite and SQL | Create the table and perform parameterized CRUD queries | `create_table()`, `add_shop()`, `get_all_shops()`, `get_shop()`, `update_shop()`, and `delete_shop()` in `database.py` |
+| Tkinter | Build windows, forms, buttons, labels, filters, and the records table | `create_widgets()`, `create_add_form()`, `edit_shop()`, and `show_statistics()` in `gui.py` |
+| Client-server communication | Send GET/POST requests and decode JSON replies | `load_shops()` and `send_post_request()` in `gui.py`; routes in `app.py` |
+| Flask | Define API routes, validate submitted fields, and return JSON/status codes | `get_shops()`, `get_shop()`, `add_shop()`, `update_shop()`, and `delete_shop()` in `app.py` |
+| File handling | Create and write the UTF-8 report using a `with` statement | `generate_report()` in `report.py` |
+| Threading and queues | Run report generation in a daemon worker thread and pass its result to Tkinter | `start_report_generation()`, `report_worker()`, and `check_report_status()` in `gui.py` |
+| Functional tools | Use `lambda` as a key function when finding the highest rating | `show_statistics()` in `gui.py`; `generate_report()` in `report.py` |
+| Path handling | Build database/report paths and create directories | `DatabaseManager.__init__()` in `database.py`; `generate_report()` in `report.py` |
 
 ## Report Generation
 
@@ -387,12 +311,12 @@ python test_api.py
 
 `test_api.py` sends requests to exercise these operations:
 
--   Add a coffee shop.
--   Update the newly added coffee shop.
--   Submit an invalid rating (`10`) and inspect the validation response.
--   Delete the newly added coffee shop.
--   Request an unknown shop ID.
--   Retrieve and display the remaining coffee shops.
+- Add a coffee shop.
+- Update the newly added coffee shop.
+- Submit an invalid rating (`10`) and inspect the validation response.
+- Delete the newly added coffee shop.
+- Request an unknown shop ID.
+- Retrieve and display the remaining coffee shops.
 
 The script prints HTTP statuses and JSON responses for inspection. It is
 a manual test script; it does not use an automated assertion framework.
@@ -413,16 +337,16 @@ is reachable, or a timeout/unavailable message otherwise.
 
 Manually verify the following behaviors in the desktop application:
 
--   Add, edit, and delete a coffee shop.
--   Search by name and filter by city/category.
--   Clear the search and filters.
--   Open the statistics dashboard.
--   Try Edit or Delete without selecting a row.
--   Try missing required fields and an invalid rating.
--   Stop Flask and use Refresh to confirm that a connection error is
+- Add, edit, and delete a coffee shop.
+- Search by name and filter by city/category.
+- Clear the search and filters.
+- Open the statistics dashboard.
+- Try Edit or Delete without selecting a row.
+- Try missing required fields and an invalid rating.
+- Stop Flask and use Refresh to confirm that a connection error is
     displayed; restart Flask and refresh again.
--   Generate a report and inspect `reports/coffee_report.txt`.
--   Restart the applications and confirm that database records remain.
+- Generate a report and inspect `reports/coffee_report.txt`.
+- Restart the applications and confirm that database records remain.
 
 ### Test results record
 
@@ -442,19 +366,19 @@ Manually verify the following behaviors in the desktop application:
 
 ## Credits and AI Assistance
 
--   Flask and Python documentation were used as technical references.
--   OpenAI ChatGPT was used as an AI-assisted learning and development
+- Flask and Python documentation were used as technical references.
+- OpenAI ChatGPT was used as an AI-assisted learning and development
     tool for explanations, debugging support, code suggestions, and
     README preparation.
--   The student is responsible for reviewing, understanding,
+- The student is responsible for reviewing, understanding,
     integrating, and testing the submitted code.
 
 
 ## Author
 
--   **Student name:** Mazen Hassan Bafaqih
--   **Student ID:** 443043723
--   **Course:** Advanced Programming
--   **GitHub:** https://github.com/Mazzz10/SaudiCoffeeGuide
+- **Student name:** Mazen Hassan Bafaqih
+- **Student ID:** 443043723
+- **Course:** Advanced Programming
+- **GitHub:** https://github.com/Mazzz10/MyCoffeeJournal
 
 
